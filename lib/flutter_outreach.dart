@@ -27,7 +27,7 @@ class FlutterOutreach {
   static sendInstantMessaging(
       {required String text,
       required List<String> recipients,
-      required List<String> urls,
+      required List<Map<String, String>> urls,
       String? access_token}) async {
     Map<String, dynamic> args = {
       'message': text,

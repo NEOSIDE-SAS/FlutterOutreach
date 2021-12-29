@@ -5,13 +5,7 @@ import Alamofire
 import AVFoundation
 import Photos
 
-enum MediaType {
-    case IMAGE
-    case VIDEO
-}
-
 struct MediaFile {
-    let type: MediaType
     let data: Data?
     let url: URL?
     let fileName: String
@@ -30,7 +24,8 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             }
         }
     }
-    var urlsToShare = [String]()
+    var urlsToShare = [[String : String]]()
+    var currentUrl = [String : String]()
     var textToShare = ""
     var urlSession: URLSession?
     var downloadTask: URLSessionDownloadTask!
@@ -63,9 +58,10 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         arguments = call.arguments as! [String :Any]
         token = arguments["access_token"] as? String
         textToShare = (arguments["message"] as? String) ?? ""
-        if let urls = arguments["urls"] as? [String], urls.count > 0 {
+        if let urls = arguments["urls"] as? [[String : String]], urls.count > 0 {
             self.urlsToShare = urls
             attachmentsCount = urls.count
+            currentUrl = urls[0]
             UIApplication.shared.keyWindow?.rootViewController?.view.addSubview(progressView)
             downloadData()
         } else {
@@ -135,7 +131,8 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     
     
     public func downloadData() {
-        if attachements.count < attachmentsCount, let url = URL(string: urlsToShare[attachements.count]) {
+        if attachements.count < attachmentsCount, let urlString = urlsToShare[attachements.count]["url"], let url = URL(string:urlString) {
+            currentUrl = urlsToShare[attachements.count]
             var urlRequest = URLRequest(url: url)
             if let token = token {
                 urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -183,7 +180,8 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         let destURL = documentsDirectoryURL.appendingPathComponent(location.lastPathComponent).path
         let data = try? Data(contentsOf: location)
-        self.attachements.append(MediaFile(type: ["png", "jpg", "gif"].contains(where: {$0 == location.pathExtension.lowercased()}) ? .IMAGE : .VIDEO, data: data, url: URL(string: destURL), fileName: "\(self.randomString(length: 5)).\(location.pathExtension.lowercased())"))
+        let fileName: String = currentUrl["fileName"] ?? ""
+        self.attachements.append(MediaFile(data: data, url: URL(string: destURL), fileName: fileName))
         downloadData()
     }
 }
