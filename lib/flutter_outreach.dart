@@ -13,7 +13,7 @@ class FlutterOutreach {
   static sendSMS(
       {required String text,
       required List<String> recipients,
-      required List<String> urls,
+      required List<Map<String, String>> urls,
       required String? access_token}) async {
     Map<String, dynamic> args = {
       'message': text,
