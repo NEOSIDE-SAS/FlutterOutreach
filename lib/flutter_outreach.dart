@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/services.dart';
@@ -11,20 +10,30 @@ class FlutterOutreach {
     return version;
   }
 
-  static sendSMS(String text, List<String> recipients, List<String> urls) async {
+  static sendSMS(
+      {required String text,
+      required List<String> recipients,
+      required List<String> urls,
+      required String? access_token}) async {
     Map<String, dynamic> args = {
-      'message' : text,
-      'recipients' : recipients,
-      'urls' : urls
+      'message': text,
+      'recipients': recipients,
+      'urls': urls,
+      'access_token': access_token
     };
     await _channel.invokeMethod('sendSMS', args);
   }
 
-  static sendInstantMessaging(String text, List<String> recipients, List<String> urls) async {
+  static sendInstantMessaging(
+      {required String text,
+      required List<String> recipients,
+      required List<String> urls,
+      String? access_token}) async {
     Map<String, dynamic> args = {
-      'message' : text,
-      'recipients' : recipients,
-      'urls' : urls
+      'message': text,
+      'recipients': recipients,
+      'urls': urls,
+      'access_token': access_token
     };
     await _channel.invokeMethod('sendInstantMessaging', args);
   }

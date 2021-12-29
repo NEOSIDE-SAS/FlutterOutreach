@@ -38,6 +38,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     var expectedContentLength = 0
     var attachmentsCount = 0
     var call: FlutterMethodCall!
+    var token: String?
 
     
     lazy var progressView: UIProgressView! = {
@@ -60,6 +61,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         self.result = result
         urlSession = URLSession(configuration: .default, delegate:self, delegateQueue: .main)
         arguments = call.arguments as! [String :Any]
+        token = arguments["access_token"] as? String
         textToShare = (arguments["message"] as? String) ?? ""
         if let urls = arguments["urls"] as? [String], urls.count > 0 {
             self.urlsToShare = urls
@@ -134,9 +136,11 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     
     public func downloadData() {
         if attachements.count < attachmentsCount, let url = URL(string: urlsToShare[attachements.count]) {
-            guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-            let destURL = documentsDirectoryURL.appendingPathComponent(url.lastPathComponent).path
-            let task = urlSession?.downloadTask(with: url)
+            var urlRequest = URLRequest(url: url)
+            if let token = token {
+                urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            let task = urlSession?.downloadTask(with: urlRequest)
             task?.resume()
         } else {
             
