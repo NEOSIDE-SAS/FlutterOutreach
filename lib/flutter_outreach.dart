@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+
+typedef OutreachCallback = void Function(String, bool);
 
 class FlutterOutreach {
   static const MethodChannel _channel = MethodChannel('flutter_outreach');
@@ -11,30 +14,51 @@ class FlutterOutreach {
   }
 
   static sendSMS(
-      {required String text,
+      {String? text,
       required List<String> recipients,
       required List<Map<String, String>> urls,
-      required String? access_token}) async {
+      String? access_token,
+      required OutreachCallback callback}) async {
     Map<String, dynamic> args = {
       'message': text,
       'recipients': recipients,
       'urls': urls,
       'access_token': access_token
     };
-    await _channel.invokeMethod('sendSMS', args);
+    bool isSuccess = await _channel.invokeMethod('sendSMS', args);
+    callback('email', isSuccess);
+  }
+
+  static sendEmail(
+      {String? text,
+      required List<String> recipients,
+      required List<Map<String, String>> urls,
+      String? access_token,
+      required OutreachCallback callback}) async {
+    Map<String, dynamic> args = {
+      'message': text,
+      'recipients': recipients,
+      'urls': urls,
+      'access_token': access_token
+    };
+    bool isSuccess = await _channel.invokeMethod('sendEmail', args);
+    callback('email', isSuccess);
   }
 
   static sendInstantMessaging(
       {required String text,
       required List<String> recipients,
       required List<Map<String, String>> urls,
-      String? access_token}) async {
+      String? access_token,
+      required OutreachCallback callback}) async {
     Map<String, dynamic> args = {
       'message': text,
       'recipients': recipients,
       'urls': urls,
       'access_token': access_token
     };
-    await _channel.invokeMethod('sendInstantMessaging', args);
+    Map<String, dynamic> result = Map<String, dynamic>.from(await _channel.invokeMethod(
+        'sendInstantMessaging', args));
+    callback((result['outreachType'] as String?) ?? '', result['isSuccess'] as bool);
   }
 }

@@ -12,14 +12,14 @@ struct MediaFile {
 }
 
 
-public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationControllerDelegate, MFMessageComposeViewControllerDelegate, URLSessionDelegate, URLSessionDataDelegate {
+public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationControllerDelegate, MFMessageComposeViewControllerDelegate {
    
     
     var result: FlutterResult!
     var arguments = [String : Any]()
-    var attachements = [MediaFile]() {
+    var attachments = [MediaFile]() {
         didSet {
-            if attachements.count == attachmentsCount {
+            if attachments.count == attachmentsCount, attachments.count > 0 {
                 activeOutreach()
             }
         }
@@ -29,19 +29,16 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     var textToShare = ""
     var urlSession: URLSession?
     var downloadTask: URLSessionDownloadTask!
-    var buffer: NSMutableData = NSMutableData()
-    var expectedContentLength = 0
     var attachmentsCount = 0
     var call: FlutterMethodCall!
     var token: String?
+    var loaderAlreadyInstanced = false
+
 
     
-    lazy var progressView: UIProgressView! = {
-        let progressView = UIProgressView(progressViewStyle: .default)
-        progressView.center = (UIApplication.shared.keyWindow?.rootViewController?.view!.center)!
-        progressView.trackTintColor = UIColor.lightGray
-        progressView.tintColor = UIColor.blue
-        return progressView
+    lazy var loaderView: ProgressLoader! = {
+        loaderView = ProgressLoader(text: "Downloading ...")
+        return loaderView
     }()
     
     
@@ -49,25 +46,31 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         let channel = FlutterMethodChannel(name: "flutter_outreach", binaryMessenger: registrar.messenger())
         let instance = SwiftFlutterOutreachPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+
+        loaderView.removeFromSuperview()
+
         self.call = call
         self.result = result
-        urlSession = URLSession(configuration: .default, delegate:self, delegateQueue: .main)
         arguments = call.arguments as! [String :Any]
         token = arguments["access_token"] as? String
         textToShare = (arguments["message"] as? String) ?? ""
         if let urls = arguments["urls"] as? [[String : String]], urls.count > 0 {
+            attachments = []
             self.urlsToShare = urls
             attachmentsCount = urls.count
             currentUrl = urls[0]
-            UIApplication.shared.keyWindow?.rootViewController?.view.addSubview(progressView)
+            UIApplication.shared.keyWindow?.rootViewController?.view.addSubview(loaderView)
             downloadData()
         } else {
             switch call.method {
             case "sendSMS":
                 sendSMS(arguments: arguments, result: result)
+            case "sendEmail":
+                sendEmail(arguments: arguments, result: result)
             case "sendInstantMessaging":
                 sendToInstantMessaging(arguments: arguments, result: result)
             case "canSendSMS":
@@ -83,6 +86,8 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         switch call?.method {
         case "sendSMS":
             sendSMS(arguments: arguments, result: result)
+        case "sendEmail":
+            sendEmail(arguments: arguments, result: result)
         case "sendInstantMessaging":
             sendToInstantMessaging(arguments: arguments, result: result)
         case "canSendSMS":
@@ -94,18 +99,45 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     
     public func sendSMS(arguments: [String:Any], result: @escaping FlutterResult) {
         if(MFMessageComposeViewController.canSendText()) {
-            self.result = result
-            let controller = MFMessageComposeViewController()
-            controller.body = textToShare
-            controller.recipients = arguments["recipients"] as? [String]
-            self.attachements.forEach({ mediaFile in
-                if let data = mediaFile.data {
-                    controller.addAttachmentData(data, typeIdentifier: "public.data", filename: mediaFile.fileName)
-                }
-            })
-            controller.messageComposeDelegate = self
+            
             DispatchQueue.main.async { [weak self] in
-                self?.progressView.removeFromSuperview()
+                guard let strongSelf = self else { return }
+                strongSelf.result = result
+                let controller = MFMessageComposeViewController()
+                controller.body = strongSelf.textToShare
+                controller.recipients = arguments["recipients"] as? [String]
+                strongSelf.attachments.forEach({ mediaFile in
+                    if let data = mediaFile.data {
+                        controller.addAttachmentData(data, typeIdentifier: "public.data", filename: mediaFile.fileName)
+                    }
+                })
+                controller.messageComposeDelegate = self
+                strongSelf.loaderView.removeFromSuperview()
+                UIApplication.shared.keyWindow?.rootViewController?.present(controller, animated: true,completion: nil)
+            }
+            
+        } else {
+            result( FlutterError(code: "device_not_supported", message: "You can't send text messages.", details: "A device may be unable to send messages if it does not support messaging or if it is not currently configured to send messages. This only applies to the ability to send text messages via iMessage, SMS, and MMS."
+                                ) )
+        }
+    }
+    
+    public func sendEmail(arguments: [String:Any], result: @escaping FlutterResult) {
+        if(MFMailComposeViewController.canSendMail()) {
+       
+            DispatchQueue.main.async { [weak self] in
+                guard let strongSelf = self else { return }
+                strongSelf.result = result
+                let controller = MFMailComposeViewController()
+                controller.setSubject(strongSelf.textToShare)
+                controller.setToRecipients(arguments["recipients"] as? [String])
+                strongSelf.attachments.forEach({ mediaFile in
+                    if let data = mediaFile.data {
+                        controller.addAttachmentData(data, mimeType: "public.data", fileName: mediaFile.fileName)
+                    }
+                })
+                controller.mailComposeDelegate = strongSelf
+                strongSelf.loaderView.removeFromSuperview()
                 UIApplication.shared.keyWindow?.rootViewController?.present(controller, animated: true,completion: nil)
             }
             
@@ -116,74 +148,84 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     }
     
     public func sendToInstantMessaging(arguments: [String:Any], result: @escaping FlutterResult) {
-        self.result = result
-        self.progressView.removeFromSuperview()
-        var items = [Any]()
-        if self.urlsToShare.count > 0 {
-            items.append(contentsOf: self.attachements.map({$0.data?.dataToFile(fileName: $0.fileName) as Any}))
-        } else {
-            items.append(textToShare)
+  
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.result = result
+            var items = [Any]()
+            if strongSelf.urlsToShare.count > 0 {
+                items.append(contentsOf: strongSelf.attachments.map({$0.data?.dataToFile(fileName: $0.fileName) as Any}))
+            } else {
+                items.append(strongSelf.textToShare)
+            }
+            let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
+            activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
+            activityVC.completionWithItemsHandler = {(activityType, completed, returnedItems, error) in
+                if !completed {
+                    return
+                }
+                strongSelf.attachments.forEach { file in
+                    if let url = file.url {
+                        try? FileManager.default.removeItem(at: url)
+                    }
+                }
+                result([
+                    "outreachType" : strongSelf.getOutreachType(activityType) as Any,
+                    "isSuccess" : completed
+                ])
+            }
+            strongSelf.loaderView.removeFromSuperview()
+            UIApplication.shared.keyWindow?.rootViewController?.present(activityVC, animated: true,completion: nil)
         }
-        let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
-        activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
-        UIApplication.shared.keyWindow?.rootViewController?.present(activityVC, animated: true,completion: nil)
+      
+    }
+    
+    func getOutreachType(_ activityType: UIActivity.ActivityType?) -> String? {
+        guard let activityTypeStr = activityType?.rawValue.lowercased() else { return nil }
+        if activityTypeStr.contains(".whatsapp.") {
+            return "Whatsapp"
+        }
+        if activityTypeStr == "com.tencent.xin.sharetimeline" {
+            return "WeChat"
+        }
+        if activityTypeStr.contains(".kakaotalk.") {
+            return "Kakao"
+        }
+        if activityTypeStr.contains(".line.") || activityTypeStr.contains(".worksone.") {
+            return "Line"
+        }
+        return nil
     }
     
     
     public func downloadData() {
-        if attachements.count < attachmentsCount, let urlString = urlsToShare[attachements.count]["url"], let url = URL(string:urlString) {
-            currentUrl = urlsToShare[attachements.count]
+        if attachments.count < attachmentsCount, let urlString = urlsToShare[attachments.count]["url"], let url = URL(string:urlString) {
+            currentUrl = urlsToShare[attachments.count]
             var urlRequest = URLRequest(url: url)
             if let token = token {
                 urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
-            let task = urlSession?.downloadTask(with: urlRequest)
-            task?.resume()
+            URLSession.shared.downloadTask(with: urlRequest, completionHandler: { url, urlResponse, error in
+                guard let location = url else { return }
+                guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                let destURL = documentsDirectoryURL.appendingPathComponent(location.lastPathComponent).path
+                let data = try? Data(contentsOf: location)
+                let fileName: String = self.currentUrl["fileName"] ?? ""
+                self.attachments.append(MediaFile(data: data, url: URL(string: destURL), fileName: fileName))
+                self.downloadData()
+            }).resume()
         } else {
             
         }
         
     }
     
-    func randomString(length: Int) -> String {
-        let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return String((0..<length).map{ _ in letters.randomElement()! })
-    }
     
     public func messageComposeViewController(_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult) {
-        let map: [MessageComposeResult: String] = [
-            MessageComposeResult.sent: "sent",
-            MessageComposeResult.cancelled: "cancelled",
-            MessageComposeResult.failed: "failed",
-        ]
-        if let callback = self.result {
-            callback(map[result])
-        }
+        self.result(result == .sent)
         UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
     }
-    
-    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        buffer.append(data)
-        let percentageDownloaded = Float(buffer.length) / Float(expectedContentLength)
-        self.progressView.setProgress(percentageDownloaded, animated: true)
-    }
-    
-    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: (URLSession.ResponseDisposition) -> Void) {
-        expectedContentLength = Int(response.expectedContentLength)
-        completionHandler(URLSession.ResponseDisposition.allow)
-        
-    }
-    
-    public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        self.progressView.setProgress(1.0, animated: true)
-        guard let location = task.response?.url else { return }
-        guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let destURL = documentsDirectoryURL.appendingPathComponent(location.lastPathComponent).path
-        let data = try? Data(contentsOf: location)
-        let fileName: String = currentUrl["fileName"] ?? ""
-        self.attachements.append(MediaFile(data: data, url: URL(string: destURL), fileName: fileName))
-        downloadData()
-    }
+   
 }
 
 
@@ -229,4 +271,22 @@ extension Data {
         
     }
     
+}
+
+
+extension SwiftFlutterOutreachPlugin: MFMailComposeViewControllerDelegate {
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        switch result {
+        case .failed:
+            self.result(false)
+        case .cancelled:
+            self.result(false)
+        case .sent:
+            self.result(true)
+        default:
+            print("")
+        }
+        
+        controller.dismiss(animated: true, completion: nil)
+    }
 }

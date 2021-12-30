@@ -16,14 +16,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    FlutterOutreach.sendInstantMessaging(text: "test", recipients: [
-      '+972542425732'
-    ], urls: [
-      {
-        'url' : 'https://kering.sharepoint.com/sites/ClientelingTools/_layouts/15/download.aspx?UniqueId=2640c565-480d-42b0-b859-6546f1980fb9&Translate=false&tempauth=eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAva2VyaW5nLnNoYXJlcG9pbnQuY29tQDJmZjA2YTAzLTFjMjQtNDBmNS05ZDNiLTg1NGQ5M2FhZWQ3ZiIsImlzcyI6IjAwMDAwMDAzLTAwMDAtMGZmMS1jZTAwLTAwMDAwMDAwMDAwMCIsIm5iZiI6IjE2NDA3OTE2NzAiLCJleHAiOiIxNjQwNzk1MjcwIiwiZW5kcG9pbnR1cmwiOiJEWDkvdGsrZTB1V2NkL20zNS96MEJzclJ6QVVqbFVlNlpxeERFTTh3cFBnPSIsImVuZHBvaW50dXJsTGVuZ3RoIjoiMTQwIiwiaXNsb29wYmFjayI6IlRydWUiLCJjaWQiOiJPR0l4TURWa056SXRZbVk1WXkwMFlXRTJMV0U0TVRjdFlqRTJaVGRsWVdZd1pUSm0iLCJ2ZXIiOiJoYXNoZWRwcm9vZnRva2VuIiwic2l0ZWlkIjoiWW1SbE5UQTRPVGN0WmpreE1DMDBPVGs0TFRoaE5UQXRNbUl5WXpFeE5tWTVNVEJtIiwiYXBwX2Rpc3BsYXluYW1lIjoiMDA3NDktT0lEQy1Cb3VjaGVyb24tQ2xpZW50ZWxpbmctV2ViQXBwIiwiZ2l2ZW5fbmFtZSI6IkVsaWUiLCJmYW1pbHlfbmFtZSI6IkRyYWkiLCJhcHBpZCI6IjliNDg2OWE1LWEwYzUtNGI0My05Y2NhLTgzNzdjYzViMzRkZiIsInRpZCI6IjJmZjA2YTAzLTFjMjQtNDBmNS05ZDNiLTg1NGQ5M2FhZWQ3ZiIsInVwbiI6ImVsaWUuZHJhaS1leHRAYm91Y2hlcm9uLmNvbSIsInB1aWQiOiIxMDAzMjAwMTYyQ0IwRjZCIiwiY2FjaGVrZXkiOiIwaC5mfG1lbWJlcnNoaXB8MTAwMzIwMDE2MmNiMGY2YkBsaXZlLmNvbSIsInNjcCI6Im15ZmlsZXMucmVhZCBhbGxmaWxlcy5yZWFkIG15ZmlsZXMud3JpdGUgYWxsZmlsZXMud3JpdGUgYWxsc2l0ZXMucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIiwidHQiOiIyIiwidXNlUGVyc2lzdGVudENvb2tpZSI6bnVsbCwiaXBhZGRyIjoiMjAuMTkwLjE1OS4zMiJ9.cDVQV1k5N0FCSFd6VDJwdm00ZE41NjB2bVdiTVhNakY4TGQzK2tOMlcyYz0&ApiVersion=2.0',
-        'fileName' : 'Jack & Quarte - Porté Video.mp4'
-      }
-      ], access_token: 'eyJ0eXAiOiJKV1QiLCJub25jZSI6IkpTOGxtekI5UllhV25kYXQ2MTMyTkcyQUZFNGliVTBVNThkSi1BalA2RUUiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1yNS1BVWliZkJpaTdOZDFqQmViYXhib1hXMCIsImtpZCI6Ik1yNS1BVWliZkJpaTdOZDFqQmViYXhib1hXMCJ9.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8yZmYwNmEwMy0xYzI0LTQwZjUtOWQzYi04NTRkOTNhYWVkN2YvIiwiaWF0IjoxNjQwNzg0NzgxLCJuYmYiOjE2NDA3ODQ3ODEsImV4cCI6MTY0MDc4OTYxMSwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkUyWmdZQkJyVVJaY1kvM20rb3Z2RmVaei9IZmtQandaL2VHTTR0R3pNc3JhdXYrYk1uZ0EiLCJhbXIiOlsicHdkIl0sImFwcF9kaXNwbGF5bmFtZSI6IjAwNzQ5LU9JREMtQm91Y2hlcm9uLUNsaWVudGVsaW5nLVdlYkFwcCIsImFwcGlkIjoiOWI0ODY5YTUtYTBjNS00YjQzLTljY2EtODM3N2NjNWIzNGRmIiwiYXBwaWRhY3IiOiIxIiwiZmFtaWx5X25hbWUiOiJEcmFpIiwiZ2l2ZW5fbmFtZSI6IkVsaWUiLCJpZHR5cCI6InVzZXIiLCJpcGFkZHIiOiIxODguMTkxLjIyNS4xMCIsIm5hbWUiOiJEUkFJIEVsaWUgKEV4dGVybmFsKSIsIm9pZCI6ImMwZWMyODcwLWZjZjctNGRiOS1iZGQ2LWU2ZDJhNDNkNGEzMSIsIm9ucHJlbV9zaWQiOiJTLTEtNS0yMS0yNjA3NTUyNDctMzg1MzE0OTM5Ni0xMDc3Njc5MTM5LTM5NTczMCIsInBsYXRmIjoiMiIsInB1aWQiOiIxMDAzMjAwMTYyQ0IwRjZCIiwicmgiOiIwLkFWOEFBMnJ3THlRYzlVQ2RPNFZOazZydGY2VnBTSnZGb0VOTG5NcURkOHhiTk45ZkFDRS4iLCJzY3AiOiJDYWxlbmRhcnMuUmVhZCBDYWxlbmRhcnMuUmVhZC5TaGFyZWQgQ2FsZW5kYXJzLlJlYWRXcml0ZSBDYWxlbmRhcnMuUmVhZFdyaXRlLlNoYXJlZCBlbWFpbCBGaWxlcy5SZWFkIEZpbGVzLlJlYWQuQWxsIEZpbGVzLlJlYWRXcml0ZSBGaWxlcy5SZWFkV3JpdGUuQWxsIE1haWwuUmVhZEJhc2ljIE1haWwuUmVhZFdyaXRlIG9wZW5pZCBwcm9maWxlIFNpdGVzLlJlYWQuQWxsIFNpdGVzLlJlYWRXcml0ZS5BbGwgVXNlci5SZWFkIiwic3ViIjoiSGppeHJwNTFELWNBYmt6UTY4ZXJ4d3FuNDlBZ1hUcmR0ejg5U09IZDFscyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJFVSIsInRpZCI6IjJmZjA2YTAzLTFjMjQtNDBmNS05ZDNiLTg1NGQ5M2FhZWQ3ZiIsInVuaXF1ZV9uYW1lIjoiZWxpZS5kcmFpLWV4dEBib3VjaGVyb24uY29tIiwidXBuIjoiZWxpZS5kcmFpLWV4dEBib3VjaGVyb24uY29tIiwidXRpIjoiTUpYYXNxZTFWazZwMXBSdFM3aWlBQSIsInZlciI6IjEuMCIsIndpZHMiOlsiYjc5ZmJmNGQtM2VmOS00Njg5LTgxNDMtNzZiMTk0ZTg1NTA5Il0sInhtc19zdCI6eyJzdWIiOiJXV3pKLUlacU9nS2huWXpzc2xaSS1ocThYeU91bVRFblh1cjg5eW95YmxzIn0sInhtc190Y2R0IjoxNDE5ODQ3NjYwfQ.wbNHMr_p01Lnc7ENGLHpF64lPKcSemlGg6FdGzLdsq10JTyzS-BaMOOV_0w6lMzBZykNKyTTx3VIMf8mSIl2uVtYeudOtjarKcuVlEKs2JecSP4yK2_JmChmd2Z2xDwpDEX9K1eLMN9xARCHJIHOrC2MpUveykLby_WCXNyVkXJXgPPm7JQWZNKrW1p6ZkgxjYn7NMbIFYGcoxKxzM2OqG41U2Qmz1NTmQ1pQdrEjVd2RdFd0AB-gHGtESPpayeJCZfNBQd8bdU3GglXSkfD6Qvrga1NYBKxxAhZm0sdmqEKbyhweoMn95_T-RNdF8EKlQIGJ-xNgOvbZDK3nU3TTg');
   }
 
   @override
@@ -33,8 +25,83 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: const Center(
-          child: Text('Running on:'),
+        body: Center(
+          child: Column(
+            children: [
+              SizedBox(height: 100,),
+              GestureDetector(
+                onTap: (){
+                  FlutterOutreach.sendEmail(text: "test", recipients: [
+                    'avidanr@balink.net'
+                  ], urls: [
+                    {
+                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
+                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
+                    }
+                  ], callback: (outreach, isSuccess) {
+                      print(outreach);
+                      print(isSuccess);
+                  });
+                },
+                child: Container(
+                  width: 140,
+                  height: 45,
+                  color: Colors.black,
+                  child: const Center(
+                    child: Text('Send Email',style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              GestureDetector(
+                onTap: (){
+                  FlutterOutreach.sendSMS(text: "test", recipients: [
+                    '+972542425732'
+                  ], urls: [
+                    {
+                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
+                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
+                    }
+                  ], callback: (outreach, isSuccess) {
+                    print(outreach);
+                    print(isSuccess);
+                  });
+                },
+                child: Container(
+                  width: 140,
+                  height: 45,
+                  color: Colors.black,
+                  child: const Center(
+                    child: Text('Send SMS',style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              GestureDetector(
+                onTap: (){
+                  FlutterOutreach.sendInstantMessaging(text: "test", recipients: [
+                    '+972542425732'
+                  ], urls: [
+                    {
+                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
+                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
+                    }
+                  ], callback: (outreach, isSuccess) {
+                    print(outreach);
+                    print(isSuccess);
+                  });
+                },
+                child: Container(
+                  width: 140,
+                  height: 45,
+                  color: Colors.black,
+                  child: const Center(
+                    child: Text('Send IM',style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
