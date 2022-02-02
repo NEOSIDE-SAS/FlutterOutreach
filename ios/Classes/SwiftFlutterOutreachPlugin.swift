@@ -1,7 +1,6 @@
 import Flutter
 import UIKit
 import MessageUI
-import Alamofire
 import AVFoundation
 import Photos
 
@@ -33,7 +32,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     var call: FlutterMethodCall!
     var token: String?
     var loaderAlreadyInstanced = false
-
+    var recipients = [String]()
 
     
     lazy var loaderView: ProgressLoader! = {
@@ -58,6 +57,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         arguments = call.arguments as! [String :Any]
         token = arguments["access_token"] as? String
         textToShare = (arguments["message"] as? String) ?? ""
+        recipients = (arguments["recipients"] as? [String]) ?? []
         if let urls = arguments["urls"] as? [[String : String]], urls.count > 0 {
             attachments = []
             self.urlsToShare = urls

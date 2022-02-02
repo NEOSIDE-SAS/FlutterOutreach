@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_outreach/flutter_outreach.dart';
 
@@ -28,39 +30,56 @@ class _MyAppState extends State<MyApp> {
         body: Center(
           child: Column(
             children: [
-              SizedBox(height: 100,),
+              const SizedBox(height: 100),
               GestureDetector(
-                onTap: (){
-                  FlutterOutreach.sendEmail(text: "test", recipients: [
-                    'avidanr@balink.net'
-                  ], urls: [
-                    {
-                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
-                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
-                    }
-                  ], callback: (outreach, isSuccess) {
-                      print(outreach);
-                      print(isSuccess);
-                  });
+                onTap: () {
+                  FlutterOutreach.sendEmail(
+                      text: "test",
+                      recipients: ['avidanr@balink.net'],
+                      urls: [
+                        {
+                          'url':
+                          'https://www.w3schools.com/css/paris.jpg',
+                          'fileName': 'paris.jpg'
+                        },
+                        {
+                          'url':
+                          'https://www.w3schools.com/css/img_5terre_wide.jpg',
+                          'fileName': 'img_5terre_wide.jpg'
+                        }
+                      ],
+                      callback: (outreach, isSuccess) {
+                        print(outreach);
+                        print(isSuccess);
+                      });
                 },
                 child: Container(
                   width: 140,
                   height: 45,
                   color: Colors.black,
                   child: const Center(
-                    child: Text('Send Email',style: TextStyle(color: Colors.white),),
+                    child: Text(
+                      'Send Email',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: (){
                   FlutterOutreach.sendSMS(text: "test", recipients: [
                     '+972542425732'
                   ], urls: [
                     {
-                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
-                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
+                      'url':
+                      'https://www.w3schools.com/css/paris.jpg',
+                      'fileName': 'paris.jpg'
+                    },
+                    {
+                      'url':
+                      'https://www.w3schools.com/css/img_5terre_wide.jpg',
+                      'fileName': 'img_5terre_wide.jpg'
                     }
                   ], callback: (outreach, isSuccess) {
                     print(outreach);
@@ -72,31 +91,45 @@ class _MyAppState extends State<MyApp> {
                   height: 45,
                   color: Colors.black,
                   child: const Center(
-                    child: Text('Send SMS',style: TextStyle(color: Colors.white),),
+                    child: Text(
+                      'Send SMS',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               GestureDetector(
-                onTap: (){
-                  FlutterOutreach.sendInstantMessaging(text: "test", recipients: [
-                    '+972542425732'
-                  ], urls: [
-                    {
-                      'url' : 'http://techslides.com/demos/sample-videos/small.mp4',
-                      'fileName' : 'big_buck_bunny_720p_1mb.mp4'
-                    }
-                  ], callback: (outreach, isSuccess) {
-                    print(outreach);
-                    print(isSuccess);
-                  });
+                onTap: () {
+                  FlutterOutreach.sendInstantMessaging(
+                      text: "test",
+                      recipients: ['+972542425732'],
+                      urls: [
+                        {
+                          'url':
+                              'https://www.w3schools.com/css/paris.jpg',
+                          'fileName': 'paris.jpg'
+                        },
+                        {
+                          'url':
+                          'https://www.w3schools.com/css/img_5terre_wide.jpg',
+                          'fileName': 'img_5terre_wide.jpg'
+                        }
+                      ],
+                      callback: (outreach, isSuccess) {
+                        print(outreach);
+                        print(isSuccess);
+                      });
                 },
                 child: Container(
                   width: 140,
                   height: 45,
                   color: Colors.black,
                   child: const Center(
-                    child: Text('Send IM',style: TextStyle(color: Colors.white),),
+                    child: Text(
+                      'Send IM',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),

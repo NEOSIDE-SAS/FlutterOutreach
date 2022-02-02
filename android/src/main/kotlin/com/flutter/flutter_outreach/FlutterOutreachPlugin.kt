@@ -1,13 +1,23 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.flutter.flutter_outreach
 
-import android.annotation.TargetApi
 import android.app.Activity
-import android.content.Intent
+import android.app.AlertDialog
+import android.app.DownloadManager
+import android.content.*
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.telephony.SmsManager
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.NonNull
-
+import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -16,91 +26,269 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry
+import java.io.*
+import java.net.HttpURLConnection
+import java.net.URL
+
+
+class UrlToDownload(var fileName: String, var urlPath: String, var bitmap: Bitmap?, var uri: Uri?)
 
 /** FlutterOutreachPlugin */
-class FlutterOutreachPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
-  private lateinit var channel : MethodChannel
-  private var activity: Activity? = null
-  private val REQUEST_CODE_SEND_SMS = 205
+class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    setupCallbackChannels(flutterPluginBinding.binaryMessenger)
-  }
+    companion object {
+        private const val CACHE_DIRECTORY = "boucheron_asset/"
+    }
 
-  private fun setupCallbackChannels(messenger: BinaryMessenger) {
-    channel = MethodChannel(messenger, "flutter_sms")
-    channel.setMethodCallHandler(this)
-  }
+    private var dialog: AlertDialog? = null
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    when (call.method) {
-      "sendSMS" -> {
-        if (!canSendSMS()) {
-          result.error(
-                  "device_not_capable",
-                  "The current device is not capable of sending text messages.",
-                  "A device may be unable to send messages if it does not support messaging or if it is not currently configured to send messages. This only applies to the ability to send text messages via iMessage, SMS, and MMS.")
-          return
+    private lateinit var channel: MethodChannel
+    private var activity: Activity? = null
+    private var urls = listOf<Map<String, String>>()
+    private var urlsToDownload = arrayOf<UrlToDownload>()
+    private var item = 0
+    private var method = ""
+
+    private var br = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val uri = FileProvider.getUriForFile(
+                activity!!,
+                activity!!.applicationContext.packageName + ".provider",
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + "/${urlsToDownload[item].fileName}")
+            )
+            urlsToDownload[item].uri = uri
+            item += 1
+            if (item == urlsToDownload.size) {
+                dialog!!.dismiss()
+                sendAsset()
+            } else {
+                downLoadMedia()
+            }
         }
-        val message = call.argument<String?>("message")
-        val recipients = call.argument<String?>("recipients")
-        sendSMS(result, recipients, message!!)
-      }
-      "canSendSMS" -> result.success(canSendSMS())
-      else -> result.notImplemented()
+
     }
-  }
 
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
-  }
-
-  override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-    activity = binding.activity
-  }
-
-  override fun onDetachedFromActivityForConfigChanges() {
-    activity = null
-  }
-
-  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-   activity = binding.activity
-  }
-
-  override fun onDetachedFromActivity() {
-    activity = null
-  }
-
-  companion object {
-    @JvmStatic
-    fun registerWith(registrar: PluginRegistry.Registrar) {
-      val inst = FlutterOutreachPlugin()
-      inst.activity = registrar.activity()
-      inst.setupCallbackChannels(registrar.messenger())
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        setupCallbackChannels(flutterPluginBinding.binaryMessenger)
     }
-  }
 
-  @TargetApi(Build.VERSION_CODES.ECLAIR)
-  private fun canSendSMS(): Boolean {
-    if (!activity!!.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY))
-      return false
-    val intent = Intent(Intent.ACTION_SENDTO)
-    intent.data = Uri.parse("smsto:")
-    val activityInfo = intent.resolveActivityInfo(activity!!.packageManager, intent.flags.toInt())
-    return !(activityInfo == null || !activityInfo.exported)
-  }
+    private fun setupCallbackChannels(messenger: BinaryMessenger) {
+        channel = MethodChannel(messenger, "flutter_outreach")
+        channel.setMethodCallHandler(this)
+    }
 
-  private fun sendSMS(result: Result, phones: String?, message: String?) {
-    val intent = Intent(Intent.ACTION_SENDTO)
-    intent.data = Uri.parse("smsto:$phones")
-    intent.putExtra("sms_body", message)
-    intent.putExtra(Intent.EXTRA_TEXT, message)
-    activity?.startActivityForResult(intent, REQUEST_CODE_SEND_SMS)
-    result.success("SMS Sent!")
-  }
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        initDialog()
+        initUrls(call)
+        method = call.method
+        activity!!.registerReceiver(br, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        if (urlsToDownload.isNotEmpty()) {
+            val thread = Thread {
+                try {
+                    downLoadMedia()
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            thread.start()
+        } else {
+            sendAsset()
+        }
+    }
+
+    private fun sendAsset() {
+        when (method) {
+            "sendSMS", "sendInstantMessaging" -> {
+                sendSMS()
+            }
+            "sendEmail" -> {
+                sendEmail()
+            }
+            else -> return
+        }
+    }
+
+    private fun initUrls(call: MethodCall) {
+        urls = (call.arguments as Map<String, String>)["urls"] as List<Map<String, String>>
+        urlsToDownload = arrayOf()
+        item = 0
+        for (url in urls) {
+            urlsToDownload += UrlToDownload(
+                fileName = url["fileName"] as String,
+                urlPath = url["url"] as String,
+                bitmap = null,
+                uri = null
+            )
+        }
+    }
+
+    private fun initDialog() {
+        dialog = AlertDialog.Builder(activity).create()
+        dialog!!.setTitle("Asset")
+        dialog!!.setMessage("Downloading ...")
+        dialog!!.setCanceledOnTouchOutside(false)
+        dialog!!.show()
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
+    }
+
+    private fun sendSMS() {
+        val uris = getMediasUris()
+
+
+        // Create the intent
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            putExtra("address", "+972587572466")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+            type = "*/*"
+        }
+
+        // Initialize the share chooser
+        val chooserTitle = "Share assets!"
+        val chooser = Intent.createChooser(intent, chooserTitle)
+        val resInfoList: List<ResolveInfo> = activity!!.packageManager.queryIntentActivities(
+            chooser,
+            PackageManager.MATCH_DEFAULT_ONLY
+        )
+
+        for (uri in uris) {
+            for (resolveInfo in resInfoList) {
+                val packageName: String = resolveInfo.activityInfo.packageName
+                activity!!.grantUriPermission(
+                    packageName,
+                    uri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+        }
+
+        activity!!.startActivity(chooser)
+
+    }
+
+    private fun getMediasUris(): ArrayList<Uri> {
+        val uris = arrayListOf<Uri>()
+
+        val cachePath = File(activity!!.externalCacheDir, CACHE_DIRECTORY)
+        cachePath.mkdirs()
+
+        for (urlToDownload in urlsToDownload) {
+            if (!urlToDownload.fileName.contains(".mp4")) {
+                val mediaFile = File(cachePath, urlToDownload.fileName).also { file ->
+                    FileOutputStream(file).use { fileOutputStream ->
+                        urlToDownload.bitmap?.compress(
+                            Bitmap.CompressFormat.JPEG,
+                            100,
+                            fileOutputStream
+                        )
+                    }
+                }.apply {
+                    deleteOnExit()
+                }
+
+                val shareImageFileUri: Uri = FileProvider.getUriForFile(
+                    activity!!,
+                    activity!!.applicationContext.packageName + ".provider",
+                    mediaFile
+                )
+                uris += shareImageFileUri
+            } else if (urlToDownload.uri != null) {
+                uris += (urlToDownload.uri)!!
+            }
+        }
+        return uris
+    }
+
+    private fun sendEmail() {
+        val to = arrayOf("asd@gmail.com")
+        val emailIntent = Intent(Intent.ACTION_SEND)
+        emailIntent.type = "vnd.android.cursor.dir/email"
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, to)
+        emailIntent.putExtra(
+            Intent.EXTRA_STREAM,
+            Uri.parse("https://helpx.adobe.com/content/dam/help/en/photoshop/using/convert-color-image-black-white/jcr_content/main-pars/before_and_after/image-before/Landscape-Color.jpg")
+        )
+        activity!!.startActivity(Intent.createChooser(emailIntent, "Email:"))
+    }
+
+    private fun downloadImage() {
+        val inputStream: InputStream?
+        val bmp: Bitmap?
+        val responseCode: Int
+        try {
+            val url = URL(urlsToDownload[item].urlPath)
+            val con = url.openConnection() as HttpURLConnection
+            con.doInput = true
+            con.connect()
+            responseCode = con.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                //download
+                inputStream = con.inputStream
+                bmp = BitmapFactory.decodeStream(inputStream)
+                urlsToDownload[item].bitmap = bmp
+                item += 1
+                if (item == urlsToDownload.size) {
+                    dialog!!.dismiss()
+                    sendAsset()
+                } else {
+                    downLoadMedia()
+                }
+                inputStream.close()
+            }
+        } catch (ex: Exception) {
+            Log.e("Exception", ex.toString())
+        }
+    }
+
+    private fun downloadVideo() {
+        val request = DownloadManager.Request(Uri.parse(urlsToDownload[item].urlPath))
+            .setTitle(urlsToDownload[item].fileName)
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+            .setAllowedOverMetered(true)
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, urlsToDownload[item].fileName)
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+
+        val dm = activity!!.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        dm.enqueue(request)
+        request.setDestinationInExternalFilesDir(activity!!.applicationContext, "/file", urlsToDownload[item].fileName)
+
+    }
+
+    private fun downLoadMedia() {
+        val thread = Thread {
+            try {
+                if(urlsToDownload[item].fileName.contains(".mp4")) {
+                    downloadVideo()
+                } else {
+                    downloadImage()
+                }
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        }
+        thread.start()
+    }
+
 }
+
