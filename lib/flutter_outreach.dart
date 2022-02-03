@@ -20,7 +20,8 @@ class FlutterOutreach {
       'urls': urls,
       'access_token': access_token
     };
-    Map<String, dynamic> result = await _channel.invokeMethod('sendSMS', args);
+    Map<String, dynamic> result = Map<String, dynamic>.from(
+        await _channel.invokeMethod('sendSMS', args));
     callback('SMS', result['isSuccess']);
 
   }
@@ -38,7 +39,8 @@ class FlutterOutreach {
       'urls': urls,
       'access_token': access_token
     };
-    Map<String, dynamic> result = await _channel.invokeMethod('sendEmail', args);
+    Map<String, dynamic> result = Map<String, dynamic>.from(
+        await _channel.invokeMethod('sendEmail', args));
     callback('email', result['isSuccess']);
   }
 
