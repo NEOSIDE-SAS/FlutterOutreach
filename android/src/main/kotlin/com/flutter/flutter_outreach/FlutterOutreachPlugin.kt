@@ -11,11 +11,8 @@ import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
-import android.telephony.SmsManager
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.NonNull
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -48,6 +45,9 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var urlsToDownload = arrayOf<UrlToDownload>()
     private var item = 0
     private var method = ""
+    private var result: Result? = null
+    private var emailRecipient: Array<String>? = null
+    private var phoneRecipient: Array<String>? = arrayOf("+3364546744")
 
     private var br = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -78,8 +78,12 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        initDialog()
+        this.result = result
         initUrls(call)
+        initEmails(call)
+        if(urlsToDownload.isNotEmpty()) {
+            initDialog()
+        }
         method = call.method
         activity!!.registerReceiver(br, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
         if (urlsToDownload.isNotEmpty()) {
@@ -98,12 +102,13 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun sendAsset() {
+        result!!.success( mapOf("outreachType" to "", "isSuccess" to true))
         when (method) {
             "sendSMS", "sendInstantMessaging" -> {
-                sendSMS()
+                share()
             }
             "sendEmail" -> {
-                sendEmail()
+                share(email = emailRecipient)
             }
             else -> return
         }
@@ -120,6 +125,13 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 bitmap = null,
                 uri = null
             )
+        }
+    }
+
+    private fun initEmails(call: MethodCall) {
+        if(call.method == "sendEmail") {
+            emailRecipient =
+                ((call.arguments as Map<String, String>)["recipients"] as List<String>).toTypedArray()
         }
     }
 
@@ -151,19 +163,20 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         activity = null
     }
 
-    private fun sendSMS() {
+    private fun share(email: Array<String>? = null) {
         val uris = getMediasUris()
-
 
         // Create the intent
         val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            putExtra("address", "+972587572466")
+            if (email != null) {
+              putExtra(Intent.EXTRA_EMAIL, emailRecipient)
+            }
+            putExtra(Intent.EXTRA_PHONE_NUMBER, "+972587675677")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
             type = "*/*"
         }
-
         // Initialize the share chooser
         val chooserTitle = "Share assets!"
         val chooser = Intent.createChooser(intent, chooserTitle)
@@ -220,18 +233,6 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         return uris
     }
 
-    private fun sendEmail() {
-        val to = arrayOf("asd@gmail.com")
-        val emailIntent = Intent(Intent.ACTION_SEND)
-        emailIntent.type = "vnd.android.cursor.dir/email"
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, to)
-        emailIntent.putExtra(
-            Intent.EXTRA_STREAM,
-            Uri.parse("https://helpx.adobe.com/content/dam/help/en/photoshop/using/convert-color-image-black-white/jcr_content/main-pars/before_and_after/image-before/Landscape-Color.jpg")
-        )
-        activity!!.startActivity(Intent.createChooser(emailIntent, "Email:"))
-    }
-
     private fun downloadImage() {
         val inputStream: InputStream?
         val bmp: Bitmap?
@@ -249,7 +250,7 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 urlsToDownload[item].bitmap = bmp
                 item += 1
                 if (item == urlsToDownload.size) {
-                    dialog!!.dismiss()
+                    dialog?.dismiss()
                     sendAsset()
                 } else {
                     downLoadMedia()

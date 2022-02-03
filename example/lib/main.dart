@@ -25,7 +25,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Fluuter outreach app'),
         ),
         body: Center(
           child: Column(
@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
                 onTap: () {
                   FlutterOutreach.sendEmail(
                       text: "test",
-                      recipients: ['avidanr@balink.net'],
+                      recipients: ['test@test.net'],
                       urls: [
                         {
                           'url':
@@ -69,7 +69,7 @@ class _MyAppState extends State<MyApp> {
               GestureDetector(
                 onTap: (){
                   FlutterOutreach.sendSMS(text: "test", recipients: [
-                    '+972542425732'
+                    '+33123456679'
                   ], urls: [
                     {
                       'url':
@@ -103,18 +103,9 @@ class _MyAppState extends State<MyApp> {
                 onTap: () {
                   FlutterOutreach.sendInstantMessaging(
                       text: "test",
-                      recipients: ['+972542425732'],
+                      recipients: ['+33123456679'],
                       urls: [
-                        {
-                          'url':
-                              'https://www.w3schools.com/css/paris.jpg',
-                          'fileName': 'paris.jpg'
-                        },
-                        {
-                          'url':
-                          'https://www.w3schools.com/css/img_5terre_wide.jpg',
-                          'fileName': 'img_5terre_wide.jpg'
-                        }
+
                       ],
                       callback: (outreach, isSuccess) {
                         print(outreach);

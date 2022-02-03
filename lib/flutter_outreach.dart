@@ -20,8 +20,8 @@ class FlutterOutreach {
       'urls': urls,
       'access_token': access_token
     };
-    bool isSuccess = await _channel.invokeMethod('sendSMS', args);
-    callback('email', isSuccess);
+    Map<String, dynamic> result = await _channel.invokeMethod('sendSMS', args);
+    callback('SMS', result['isSuccess']);
 
   }
 
@@ -38,8 +38,8 @@ class FlutterOutreach {
       'urls': urls,
       'access_token': access_token
     };
-    bool isSuccess = await _channel.invokeMethod('sendEmail', args);
-    callback('email', isSuccess);
+    Map<String, dynamic> result = await _channel.invokeMethod('sendEmail', args);
+    callback('email', result['isSuccess']);
   }
 
   static sendInstantMessaging(
