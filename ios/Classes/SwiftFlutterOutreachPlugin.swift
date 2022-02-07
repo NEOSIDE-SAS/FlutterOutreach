@@ -58,6 +58,9 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         token = arguments["access_token"] as? String
         textToShare = (arguments["message"] as? String) ?? ""
         recipients = (arguments["recipients"] as? [String]) ?? []
+        attachments = []
+        self.urlsToShare = []
+        attachmentsCount = 0
         if let urls = arguments["urls"] as? [[String : String]], urls.count > 0 {
             attachments = []
             self.urlsToShare = urls
