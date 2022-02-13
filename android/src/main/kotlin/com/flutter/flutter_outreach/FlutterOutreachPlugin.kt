@@ -14,6 +14,8 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.annotation.NonNull
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -26,6 +28,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.jar.Manifest
 
 
 class UrlToDownload(var fileName: String, var urlPath: String, var bitmap: Bitmap?, var uri: Uri?)
@@ -98,6 +101,39 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             thread.start()
         } else {
             sendAsset()
+        }
+    }
+
+    fun onClickRequestPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                activity!!,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                activity!!,
+                Manifest.permission.CAMERA
+            ) -> {
+                layout.showSnackbar(
+                    view,
+                    getString(R.string.permission_required),
+                    Snackbar.LENGTH_INDEFINITE,
+                    getString(R.string.ok)
+                ) {
+                    requestPermissionLauncher.launch(
+                        Manifest.permission.CAMERA
+                    )
+                }
+            }
+
+            else -> {
+                requestPermissionLauncher.launch(
+                    Manifest.permission.CAMERA
+                )
+            }
         }
     }
 
