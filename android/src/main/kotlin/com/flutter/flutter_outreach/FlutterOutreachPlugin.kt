@@ -14,8 +14,6 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.annotation.NonNull
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -28,7 +26,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.jar.Manifest
 
 
 class UrlToDownload(var fileName: String, var urlPath: String, var bitmap: Bitmap?, var uri: Uri?)
@@ -50,7 +47,10 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var method = ""
     private var result: Result? = null
     private var emailRecipient: Array<String>? = null
+    private var message = ""
     private var phoneRecipient: Array<String>? = arrayOf("+3364546744")
+    private var storagePermission: ExternalStoragePermissions = ExternalStoragePermissions()
+    private var permissionsRegistry: PermissionsRegistry? = null
 
     private var br = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -90,52 +90,32 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         method = call.method
         activity!!.registerReceiver(br, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
         if (urlsToDownload.isNotEmpty()) {
-            val thread = Thread {
-                try {
-                    downLoadMedia()
-                } catch (e: java.lang.Exception) {
-                    e.printStackTrace()
+            storagePermission.requestPermissions(
+                activity!!,
+                permissionsRegistry!!,
+                object : ResultCallback {
+                    override fun onResult(errorCode: String?, errorDescription: String?) {
+                        if (errorCode == null) {
+                            val thread = Thread {
+                                try {
+                                    downLoadMedia()
+                                } catch (e: java.lang.Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                            thread.start()
+                        }
+                    }
                 }
-            }
-
-            thread.start()
+            );
         } else {
             sendAsset()
         }
+
+
     }
 
-    fun onClickRequestPermission() {
-        when {
-            ContextCompat.checkSelfPermission(
-                activity!!,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
 
-            }
-
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                activity!!,
-                Manifest.permission.CAMERA
-            ) -> {
-                layout.showSnackbar(
-                    view,
-                    getString(R.string.permission_required),
-                    Snackbar.LENGTH_INDEFINITE,
-                    getString(R.string.ok)
-                ) {
-                    requestPermissionLauncher.launch(
-                        Manifest.permission.CAMERA
-                    )
-                }
-            }
-
-            else -> {
-                requestPermissionLauncher.launch(
-                    Manifest.permission.CAMERA
-                )
-            }
-        }
-    }
 
     private fun sendAsset() {
         result!!.success( mapOf("outreachType" to "", "isSuccess" to true))
@@ -208,6 +188,7 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             if (email != null) {
               putExtra(Intent.EXTRA_EMAIL, emailRecipient)
             }
+            putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_PHONE_NUMBER, "+972587675677")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
