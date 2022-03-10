@@ -47,7 +47,7 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var method = ""
     private var result: Result? = null
     private var emailRecipient: Array<String>? = null
-    private var message = ""
+    private var message:String? = ""
     private var phoneRecipient: Array<String>? = arrayOf("+3364546744")
     private var storagePermission: ExternalStoragePermissions = ExternalStoragePermissions()
     private var permissionsRegistry: PermissionsRegistry? = null
@@ -82,6 +82,7 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         this.result = result
+        message = (call.arguments as Map<String, String>)["message"] as String?
         initUrls(call)
         initEmails(call)
         if(urlsToDownload.isNotEmpty()) {

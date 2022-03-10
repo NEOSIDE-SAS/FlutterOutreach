@@ -37,16 +37,7 @@ class _MyAppState extends State<MyApp> {
                       text: "test",
                       recipients: ['test@test.net'],
                       urls: [
-                        {
-                          'url':
-                          'https://www.w3schools.com/css/paris.jpg',
-                          'fileName': 'paris.jpg'
-                        },
-                        {
-                          'url':
-                          'https://www.w3schools.com/css/img_5terre_wide.jpg',
-                          'fileName': 'img_5terre_wide.jpg'
-                        }
+
                       ],
                       callback: (outreach, isSuccess) {
                         print(outreach);
