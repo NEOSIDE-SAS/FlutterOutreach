@@ -157,8 +157,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         DispatchQueue.main.async { [weak self] in
             guard let strongSelf = self else { return }
             strongSelf.result = result
-            var items = [Any]()
-            var images = [ShareableItem]()
+            var items = [ShareableItem]()
             if strongSelf.urlsToShare.count > 0 {
                 strongSelf.attachments.forEach { file in
                     // if let url = file.url {
@@ -166,22 +165,19 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                     // }
                     if let data = file.data {
                         if let image = UIImage(data:data) {
-                            images.append(ShareableImage(image: image, title: strongSelf.textToShare))
+                            items.append(ShareableItem(image: image, title: strongSelf.textToShare))
                         }
                     }
                 }
-                print("Nb Images to send : ")
-                print(images.count)
             } else {
-//                items.append(strongSelf.textToShare)
+                // items.append(strongSelf.textToShare)
                 if let image = UIImage(named: "boucheron_diamond.jpg",
                                       in: Bundle(for: FlutterOutreachPlugin.self),
                                        compatibleWith: nil) {
                     items.append(ShareableItem(image: image, title: strongSelf.textToShare))
                 }
-                images.append(ShareableImage(image: image, title: strongSelf.textToShare))
             }
-            let activityVC = UIActivityViewController(activityItems: images , applicationActivities: nil)
+            let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
             activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
             activityVC.completionWithItemsHandler = {(activityType, completed, returnedItems, error) in
                 if !completed {
@@ -357,23 +353,6 @@ final class ShareableItem: NSObject, UIActivityItemSource {
         metadata.originalURL = URL(fileURLWithPath: subtitleString)
         
         return metadata
-    }
-}
-
-final class ShareableText: NSObject, UIActivityItemSource {
-    private let title: String
-
-    init(title: String) {
-        self.title = title
-        super.init()
-    }
-
-    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        return title
-    }
-
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        return title
     }
 }
 
