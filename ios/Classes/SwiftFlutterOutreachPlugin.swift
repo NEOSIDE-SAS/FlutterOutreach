@@ -3,6 +3,8 @@ import UIKit
 import MessageUI
 import AVFoundation
 import Photos
+import UIKit
+import LinkPresentation
 
 struct MediaFile {
     let data: Data?
@@ -156,12 +158,30 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             guard let strongSelf = self else { return }
             strongSelf.result = result
             var items = [Any]()
+            var images = [ShareableItem]()
             if strongSelf.urlsToShare.count > 0 {
-                items.append(contentsOf: strongSelf.attachments.map({$0.data?.dataToFile(fileName: $0.fileName) as Any}))
+                strongSelf.attachments.forEach { file in
+                    // if let url = file.url {
+                    //     try? FileManager.default.removeItem(at: url)
+                    // }
+                    if let data = file.data {
+                        if let image = UIImage(data:data) {
+                            images.append(ShareableImage(image: image, title: strongSelf.textToShare))
+                        }
+                    }
+                }
+                print("Nb Images to send : ")
+                print(images.count)
             } else {
-                items.append(strongSelf.textToShare)
+//                items.append(strongSelf.textToShare)
+                if let image = UIImage(named: "boucheron_diamond.jpg",
+                                      in: Bundle(for: FlutterOutreachPlugin.self),
+                                       compatibleWith: nil) {
+                    items.append(ShareableItem(image: image, title: strongSelf.textToShare))
+                }
+                images.append(ShareableImage(image: image, title: strongSelf.textToShare))
             }
-            let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
+            let activityVC = UIActivityViewController(activityItems: images , applicationActivities: nil)
             activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
             activityVC.completionWithItemsHandler = {(activityType, completed, returnedItems, error) in
                 if !completed {
@@ -303,5 +323,86 @@ extension SwiftFlutterOutreachPlugin: MFMailComposeViewControllerDelegate {
         }
         
         controller.dismiss(animated: true, completion: nil)
+    }
+}
+
+
+final class ShareableItem: NSObject, UIActivityItemSource {
+    private let image: UIImage
+    private let title: String
+
+    init(image: UIImage, title: String) {
+        self.image = image
+        self.title = title
+        super.init()
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return image
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        return image
+    }
+    
+    @available(iOS 13.0, *)
+    func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
+        
+        let metadata = LPLinkMetadata()
+        metadata.title = title
+        metadata.iconProvider = NSItemProvider(object: image)
+        let size = image.fileSize()
+        let type = image.fileType()
+        let subtitleString = "\(type.uppercased()) File · \(size)"
+        metadata.originalURL = URL(fileURLWithPath: subtitleString)
+        
+        return metadata
+    }
+}
+
+final class ShareableText: NSObject, UIActivityItemSource {
+    private let title: String
+
+    init(title: String) {
+        self.title = title
+        super.init()
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return title
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        return title
+    }
+}
+
+extension UIImage {
+    func fileType() -> String {
+        guard let data = self.jpegData(compressionQuality: 1), data.count > 8 else { return "Unknown" }
+        
+        var header = [UInt8](repeating: 0, count: 8)
+        data.copyBytes(to: &header, count: 8)
+        
+        switch header {
+        case [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]: // PNG: 89 50 4E 47 0D 0A 1A 0A
+            return "png"
+        case [0xFF, 0xD8, 0xFF]: // JPEG: FF D8 FF
+            return "jpg"
+        default:
+            return "unknown"
+        }
+    }
+    
+    func fileSize() -> String {
+        guard let imageData = self.jpegData(compressionQuality: 1) else { return "Unknown" }
+        let size = Double(imageData.count) // in bytes
+        if size < 1024 {
+            return String(format: "%.2f bytes", size)
+        } else if size < 1024 * 1024 {
+            return String(format: "%.2f KB", size/1024.0)
+        } else {
+            return String(format: "%.2f MB", size/(1024.0*1024.0))
+        }
     }
 }
