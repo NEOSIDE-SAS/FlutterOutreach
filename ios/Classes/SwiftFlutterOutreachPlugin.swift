@@ -170,12 +170,12 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                     }
                 }
             } else {
-                // items.append(strongSelf.textToShare)
-                if let image = UIImage(named: "boucheron_diamond.jpg",
-                                      in: Bundle(for: FlutterOutreachPlugin.self),
-                                       compatibleWith: nil) {
-                    items.append(ShareableItem(image: image, title: strongSelf.textToShare))
-                }
+                items.append(ShareableItem(image: nil, title: strongSelf.textToShare))
+                // if let image = UIImage(named: "boucheron_diamond.jpg",
+                //                         in: Bundle(for: FlutterOutreachPlugin.self),
+                //                         compatibleWith: nil) {
+                //     items.append(ShareableItem(image: image, title: strongSelf.textToShare))
+                // }
             }
             let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
             activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
@@ -324,17 +324,17 @@ extension SwiftFlutterOutreachPlugin: MFMailComposeViewControllerDelegate {
 
 
 final class ShareableItem: NSObject, UIActivityItemSource {
-    private let image: UIImage
-    private let title: String
+    private let image: UIImage?
+    private let title: String?
 
-    init(image: UIImage, title: String) {
+    init(image: UIImage?, title: String?) {
         self.image = image
         self.title = title
         super.init()
     }
 
     func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        return image
+        return image ?? "";
     }
 
     func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
@@ -346,12 +346,13 @@ final class ShareableItem: NSObject, UIActivityItemSource {
         
         let metadata = LPLinkMetadata()
         metadata.title = title
-        metadata.iconProvider = NSItemProvider(object: image)
-        let size = image.fileSize()
-        let type = image.fileType()
-        let subtitleString = "\(type.uppercased()) File · \(size)"
-        metadata.originalURL = URL(fileURLWithPath: subtitleString)
-        
+        if let img = image {
+            metadata.iconProvider = NSItemProvider(object: img)
+            let size = img.fileSize()
+            let type = img.fileType()
+            let subtitleString = "\(type.uppercased()) File · \(size)"
+            metadata.originalURL = URL(fileURLWithPath: subtitleString)
+        }
         return metadata
     }
 }
