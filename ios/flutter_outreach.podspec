@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_outreach'
-  s.version          = '0.0.1'
+  s.version          = '0.1.1'
   s.summary          = 'Flutter plugin for sending text and medias to many channels like Whatsapp / Line ...'
   s.description      = <<-DESC
 Flutter plugin for sending text and medias to many channels like Whatsapp / Line ...

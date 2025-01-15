@@ -160,22 +160,14 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             var items = [ShareableItem]()
             if strongSelf.urlsToShare.count > 0 {
                 strongSelf.attachments.forEach { file in
-                    // if let url = file.url {
-                    //     try? FileManager.default.removeItem(at: url)
-                    // }
                     if let data = file.data {
                         if let image = UIImage(data:data) {
-                            items.append(ShareableItem(image: image, title: strongSelf.textToShare))
+                            items.append(ShareableItemWithImage(image: image, title: strongSelf.textToShare))
                         }
                     }
                 }
             } else {
-                items.append(ShareableItem(image: nil, title: strongSelf.textToShare))
-                // if let image = UIImage(named: "boucheron_diamond.jpg",
-                //                         in: Bundle(for: FlutterOutreachPlugin.self),
-                //                         compatibleWith: nil) {
-                //     items.append(ShareableItem(image: image, title: strongSelf.textToShare))
-                // }
+                items.append(ShareableItem(title: strongSelf.textToShare))
             }
             let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
             activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
@@ -322,27 +314,51 @@ extension SwiftFlutterOutreachPlugin: MFMailComposeViewControllerDelegate {
     }
 }
 
+class ShareableItem: NSObject, UIActivityItemSource {
+    private let title: String?
 
-final class ShareableItem: NSObject, UIActivityItemSource {
+    init(title: String?) {
+        self.title = title
+        super.init()
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return "";
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        return title
+    }
+    
+    @available(iOS 13.0, *)
+    func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
+        
+        let metadata = LPLinkMetadata()
+        metadata.title = title
+        return metadata
+    }
+}
+
+final class ShareableItemWithImage: ShareableItem {
     private let image: UIImage?
     private let title: String?
 
     init(image: UIImage?, title: String?) {
         self.image = image
         self.title = title
-        super.init()
+        super.init(title: title)
     }
 
-    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+    override func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
         return image ?? "";
     }
 
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+    override func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
         return image
     }
     
     @available(iOS 13.0, *)
-    func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
+    override func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
         
         let metadata = LPLinkMetadata()
         metadata.title = title
@@ -370,7 +386,7 @@ extension UIImage {
         case [0xFF, 0xD8, 0xFF]: // JPEG: FF D8 FF
             return "jpg"
         default:
-            return "unknown"
+            return "image"
         }
     }
     

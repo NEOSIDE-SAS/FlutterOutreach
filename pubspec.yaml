@@ -1,6 +1,6 @@
 name: flutter_outreach
 description: Flutter plugin for sending text and medias to many channels like Whatsapp / Line ...
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/yankelm/FlutterOutreach
 
 environment:
