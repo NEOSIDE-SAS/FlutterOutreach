@@ -135,7 +135,9 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                 strongSelf.result = result
                 let controller = MFMailComposeViewController()
                 controller.setMessageBody(strongSelf.textToShare, isHTML: false)
+                controller.setSubject(arguments["subject"] as? [String])
                 controller.setToRecipients(arguments["recipients"] as? [String])
+                controller.set
                 strongSelf.attachments.forEach({ mediaFile in
                     if let data = mediaFile.data {
                         controller.addAttachmentData(data, mimeType: "public.data", fileName: mediaFile.fileName)

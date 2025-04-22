@@ -20,10 +20,9 @@ class FlutterOutreach {
       'urls': urls,
       'access_token': access_token
     };
-    Map<String, dynamic> result = Map<String, dynamic>.from(
-        await _channel.invokeMethod('sendSMS', args));
+    Map<String, dynamic> result =
+        Map<String, dynamic>.from(await _channel.invokeMethod('sendSMS', args));
     callback('SMS', result['isSuccess']);
-
   }
 
   static sendEmail(
@@ -32,9 +31,11 @@ class FlutterOutreach {
       required List<Map<String, String>> urls,
       // ignore: non_constant_identifier_names
       String? access_token,
-      required OutreachCallback callback}) async {
+      required OutreachCallback callback,
+      String? subject}) async {
     Map<String, dynamic> args = {
       'message': text,
+      'subject': subject,
       'recipients': recipients,
       'urls': urls,
       'access_token': access_token
