@@ -160,9 +160,21 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             var items = [ShareableItem]()
             if strongSelf.urlsToShare.count > 0 {
                 strongSelf.attachments.forEach { file in
+                    let fileExtension = (file.fileName as NSString).pathExtension.lowercased()
                     if let data = file.data {
                         if let image = UIImage(data:data) {
                             items.append(ShareableItemWithImage(image: image, title: strongSelf.textToShare))
+                        } else if ["mp4", "mov", "m4v"].contains(fileExtension) {
+                            let tempURL = FileManager.default.temporaryDirectory
+                                .appendingPathComponent(UUID().uuidString)
+                                .appendingPathExtension(fileExtension)
+
+                            do {
+                                try data.write(to: tempURL)
+                                items.append(ShareableItemWithVideo(videoURL: tempURL, title: strongSelf.textToShare))
+                            } catch {
+                                print("Erreur lors de l’écriture du fichier vidéo temporaire : \(error)")
+                            }
                         }
                     }
                 }
@@ -370,6 +382,53 @@ final class ShareableItemWithImage: ShareableItem {
             metadata.originalURL = URL(fileURLWithPath: subtitleString)
         }
         return metadata
+    }
+}
+
+final class ShareableItemWithVideo: ShareableItem {
+    private let videoURL: URL
+    private let title: String?
+
+    init(videoURL: URL, title: String?) {
+        self.videoURL = videoURL
+        self.title = title
+        super.init(title: title)
+    }
+
+    override func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return videoURL
+    }
+
+    override func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        return videoURL
+    }
+
+    @available(iOS 13.0, *)
+    override func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
+        let metadata = LPLinkMetadata()
+        metadata.title = title ?? "Video"
+        metadata.originalURL = videoURL
+
+        if let thumbnail = generateThumbnail(for: videoURL) {
+            metadata.iconProvider = NSItemProvider(object: thumbnail)
+        }
+
+        return metadata
+    }
+
+    private func generateThumbnail(for url: URL) -> UIImage? {
+        let asset = AVAsset(url: url)
+        let assetImgGenerate = AVAssetImageGenerator(asset: asset)
+        assetImgGenerate.appliesPreferredTrackTransform = true
+
+        let time = CMTimeMake(value: 1, timescale: 2)
+        do {
+            let img = try assetImgGenerate.copyCGImage(at: time, actualTime: nil)
+            return UIImage(cgImage: img)
+        } catch {
+            print("Thumbnail generation error: \(error)")
+            return nil
+        }
     }
 }
 
