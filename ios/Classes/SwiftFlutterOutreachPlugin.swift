@@ -158,7 +158,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
         DispatchQueue.main.async { [weak self] in
             guard let strongSelf = self else { return }
             strongSelf.result = result
-            var items = [ShareableItem]()
+            var items = [Any]()
             if strongSelf.urlsToShare.count > 0 {
                 strongSelf.attachments.forEach { file in
                     let fileExtension = (file.fileName as NSString).pathExtension.lowercased()
@@ -179,6 +179,8 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                         }
                     }
                 }
+                // BGU - Add a simple String (ShareableItem doesn't work with ShareableItemWithImage)
+                items.append(strongSelf.textToShare)
             } else {
                 items.append(ShareableItem(title: strongSelf.textToShare))
             }
