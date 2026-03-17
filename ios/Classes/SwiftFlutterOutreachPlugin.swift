@@ -176,6 +176,17 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                             } catch {
                                 print("Erreur lors de l’écriture du fichier vidéo temporaire : \(error)")
                             }
+                        } else if ["pdf"].contains(fileExtension) {
+                            let tempURL = FileManager.default.temporaryDirectory
+                                .appendingPathComponent(UUID().uuidString)
+                                .appendingPathExtension(fileExtension)
+
+                            do {
+                                try data.write(to: tempURL)
+                                items.append(ShareableItemWithPdf(fileURL: tempURL, title: strongSelf.textToShare))
+                            } catch {
+                                print("Erreur lors de l’écriture du fichier vidéo temporaire : \(error)")
+                            }
                         }
                     }
                 }
@@ -299,7 +310,6 @@ extension Data {
         return nil
         
     }
-    
 }
 
 
@@ -432,6 +442,48 @@ final class ShareableItemWithVideo: ShareableItem {
             print("Thumbnail generation error: \(error)")
             return nil
         }
+    }
+}
+final class ShareableItemWithPdf: ShareableItem {
+    private let fileURL: URL
+    private let title: String?
+
+    init(fileURL: URL, title: String?) {
+        self.fileURL = fileURL
+        self.title = title
+        super.init(title: title)
+    }
+
+    override func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return fileURL
+    }
+
+    override func activityViewController(
+        _ activityViewController: UIActivityViewController,
+        itemForActivityType activityType: UIActivity.ActivityType?
+    ) -> Any? {
+        return fileURL
+    }
+
+    @available(iOS 13.0, *)
+    override func activityViewControllerLinkMetadata(
+        _ activityViewController: UIActivityViewController
+    ) -> LPLinkMetadata? {
+
+        let metadata = LPLinkMetadata()
+        metadata.title = title
+
+        // Icône PDF (optionnel)
+        let pdfIcon = UIImage(systemName: "doc.richtext") // ou "doc.fill"
+        if let icon = pdfIcon {
+            metadata.iconProvider = NSItemProvider(object: icon)
+        }
+
+        // Subtitle hack (comme ton image)
+        let fileName = fileURL.lastPathComponent
+        metadata.originalURL = URL(fileURLWithPath: fileName)
+
+        return metadata
     }
 }
 
