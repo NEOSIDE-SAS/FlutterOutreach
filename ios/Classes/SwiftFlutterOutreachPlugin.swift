@@ -203,9 +203,11 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             let activityVC = UIActivityViewController(activityItems: items , applicationActivities: nil)
             activityVC.excludedActivityTypes = [ .airDrop, .addToReadingList, .assignToContact, .copyToPasteboard, .mail, .message, .postToTencentWeibo, .postToVimeo, .postToWeibo, .print ]
             activityVC.completionWithItemsHandler = {(activityType, completed, returnedItems, error) in
-                strongSelf.attachments.forEach { file in
-                    if let url = file.url {
-                        try? FileManager.default.removeItem(at: url)
+                if completed {
+                    strongSelf.attachments.forEach { file in
+                        if let url = file.url {
+                            try? FileManager.default.removeItem(at: url)
+                        }
                     }
                 }
                 result([
