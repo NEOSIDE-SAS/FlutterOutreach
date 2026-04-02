@@ -22,7 +22,7 @@ class FlutterOutreach {
     };
     Map<String, dynamic> result =
         Map<String, dynamic>.from(await _channel.invokeMethod('sendSMS', args));
-    callback('SMS', result['isSuccess']);
+    callback('SMS', result['completed']);
   }
 
   static sendEmail(
@@ -42,7 +42,7 @@ class FlutterOutreach {
     };
     Map<String, dynamic> result = Map<String, dynamic>.from(
         await _channel.invokeMethod('sendEmail', args));
-    callback('email', result['isSuccess']);
+    callback('email', result['completed']);
   }
 
   static sendInstantMessaging(
@@ -60,6 +60,6 @@ class FlutterOutreach {
     Map<String, dynamic> result = Map<String, dynamic>.from(
         await _channel.invokeMethod('sendInstantMessaging', args));
     callback(
-        (result['outreachType'] as String?) ?? '', result['isSuccess'] as bool);
+        (result['outreachType'] as String?) ?? '', result['completed'] as bool);
   }
 }

@@ -289,7 +289,7 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     public func messageComposeViewController(_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult) {
         self.result([
             "outreachType" : "SMS",
-            "isSuccess" : result == .sent
+            "completed" : result == .sent
         ])
         UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
     }
@@ -347,17 +347,17 @@ extension SwiftFlutterOutreachPlugin: MFMailComposeViewControllerDelegate {
         case .failed:
             self.result([
                 "outreachType" : "Email",
-                "isSuccess" : false
+                "completed" : false
             ])
         case .cancelled:
             self.result([
                 "outreachType" : "Email",
-                "isSuccess" : false
+                "completed" : false
             ])
         case .sent:
             self.result([
                 "outreachType" : "Email",
-                "isSuccess" : true
+                "completed" : true
             ])
         default:
             print("")

@@ -119,7 +119,7 @@ class FlutterOutreachPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
 
     private fun sendAsset() {
-        result!!.success( mapOf("outreachType" to "", "isSuccess" to true))
+        result!!.success( mapOf("outreachType" to "", "completed" to true))
         when (method) {
             "sendSMS", "sendInstantMessaging" -> {
                 share()

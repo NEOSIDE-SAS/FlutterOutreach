@@ -36,12 +36,10 @@ class _MyAppState extends State<MyApp> {
                   FlutterOutreach.sendEmail(
                       text: "test",
                       recipients: ['test@test.net'],
-                      urls: [
-
-                      ],
-                      callback: (outreach, isSuccess) {
+                      urls: [],
+                      callback: (outreach, completed) {
                         print(outreach);
-                        print(isSuccess);
+                        print(completed);
                       });
                 },
                 child: Container(
@@ -58,24 +56,25 @@ class _MyAppState extends State<MyApp> {
               ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: (){
-                  FlutterOutreach.sendSMS(text: "test", recipients: [
-                    '+33123456679'
-                  ], urls: [
-                    {
-                      'url':
-                      'https://www.w3schools.com/css/paris.jpg',
-                      'fileName': 'paris.jpg'
-                    },
-                    {
-                      'url':
-                      'https://www.w3schools.com/css/img_5terre_wide.jpg',
-                      'fileName': 'img_5terre_wide.jpg'
-                    }
-                  ], callback: (outreach, isSuccess) {
-                    print(outreach);
-                    print(isSuccess);
-                  });
+                onTap: () {
+                  FlutterOutreach.sendSMS(
+                      text: "test",
+                      recipients: ['+33123456679'],
+                      urls: [
+                        {
+                          'url': 'https://www.w3schools.com/css/paris.jpg',
+                          'fileName': 'paris.jpg'
+                        },
+                        {
+                          'url':
+                              'https://www.w3schools.com/css/img_5terre_wide.jpg',
+                          'fileName': 'img_5terre_wide.jpg'
+                        }
+                      ],
+                      callback: (outreach, completed) {
+                        print(outreach);
+                        print(completed);
+                      });
                 },
                 child: Container(
                   width: 140,
@@ -95,12 +94,10 @@ class _MyAppState extends State<MyApp> {
                   FlutterOutreach.sendInstantMessaging(
                       text: "test",
                       recipients: ['+33123456679'],
-                      urls: [
-
-                      ],
-                      callback: (outreach, isSuccess) {
+                      urls: [],
+                      callback: (outreach, completed) {
                         print(outreach);
-                        print(isSuccess);
+                        print(completed);
                       });
                 },
                 child: Container(
