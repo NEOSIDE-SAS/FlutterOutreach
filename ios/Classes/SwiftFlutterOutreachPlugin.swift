@@ -159,13 +159,18 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             guard let strongSelf = self else { return }
             strongSelf.result = result
             var items = [Any]()
+            let imageExtensions = ["jpg", "jpeg", "png", "heic", "webp"]
+            let videoExtensions = ["mp4", "mov", "m4v"]
+            let pdfExtensions = ["pdf"]
             if strongSelf.urlsToShare.count > 0 {
                 strongSelf.attachments.forEach { file in
                     let fileExtension = (file.fileName as NSString).pathExtension.lowercased()
                     if let data = file.data {
-                        if let image = UIImage(data:data) {
-                            items.append(ShareableItemWithImage(image: image, title: strongSelf.textToShare))
-                        } else if ["mp4", "mov", "m4v"].contains(fileExtension) {
+                        if imageExtensions.contains(fileExtension) {
+                            if let image = UIImage(data:data) {
+                                items.append(ShareableItemWithImage(image: image, title: strongSelf.textToShare))
+                            }
+                        } else if videoExtensions.contains(fileExtension) {
                             let tempURL = FileManager.default.temporaryDirectory
                                 .appendingPathComponent(UUID().uuidString)
                                 .appendingPathExtension(fileExtension)
@@ -176,14 +181,14 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
                             } catch {
                                 print("Erreur lors de l’écriture du fichier vidéo temporaire : \(error)")
                             }
-                        } else if ["pdf"].contains(fileExtension) {
-                            let tempURL = FileManager.default.temporaryDirectory
-                                .appendingPathComponent(UUID().uuidString)
-                                .appendingPathExtension(fileExtension)
+                        } else if pdfExtensions.contains(fileExtension) {
+                            let tempFolder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                                try? FileManager.default.createDirectory(at: tempFolder, withIntermediateDirectories: true)
+                            let tempURL = tempFolder.appendingPathComponent(file.fileName)
 
                             do {
                                 try data.write(to: tempURL)
-                                items.append(ShareableItemWithPdf(fileURL: tempURL, title: strongSelf.textToShare))
+                                items.append(ShareableItemWithPdf(fileURL: tempURL, title: file.fileName))
                             } catch {
                                 print("Erreur lors de l’écriture du fichier vidéo temporaire : \(error)")
                             }
@@ -236,8 +241,15 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
     
     
     public func downloadData() {
-        if attachments.count < attachmentsCount, let urlString = urlsToShare[attachments.count]["url"], let url = URL(string:urlString) {
+        if attachments.count < attachmentsCount, let urlString = urlsToShare[attachments.count]["url"], let url = urlString.starts(with: "/") ? URL(fileURLWithPath: urlString) : URL(string:urlString) {
             currentUrl = urlsToShare[attachments.count]
+            
+            // LocalFile (Share PDF)
+            if url.isFileURL {
+                handleLocalFile(url: url)
+                return
+            }
+            
             var urlRequest = URLRequest(url: url)
             if let token = token {
                 urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -255,6 +267,25 @@ public class SwiftFlutterOutreachPlugin: NSObject, FlutterPlugin, UINavigationCo
             
         }
         
+    }
+    
+    private func handleLocalFile(url: URL) {
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName: String = currentUrl["fileName"] ?? ""
+
+            attachments.append(
+                MediaFile(
+                    data: data,
+                    url: url,
+                    fileName: fileName
+                )
+            )
+
+            downloadData()
+        } catch {
+            print("Error reading local file: \(error)")
+        }
     }
     
     
@@ -444,6 +475,7 @@ final class ShareableItemWithVideo: ShareableItem {
         }
     }
 }
+
 final class ShareableItemWithPdf: ShareableItem {
     private let fileURL: URL
     private let title: String?
@@ -471,17 +503,12 @@ final class ShareableItemWithPdf: ShareableItem {
     ) -> LPLinkMetadata? {
 
         let metadata = LPLinkMetadata()
-        metadata.title = title
-
-        // Icône PDF (optionnel)
-        let pdfIcon = UIImage(systemName: "doc.richtext") // ou "doc.fill"
-        if let icon = pdfIcon {
-            metadata.iconProvider = NSItemProvider(object: icon)
-        }
-
-        // Subtitle hack (comme ton image)
-        let fileName = fileURL.lastPathComponent
-        metadata.originalURL = URL(fileURLWithPath: fileName)
+        metadata.title = "MyCat"
+        metadata.url = fileURL
+        metadata.originalURL = fileURL
+        let provider = NSItemProvider(contentsOf: fileURL)
+        metadata.imageProvider = provider
+        metadata.iconProvider = provider
 
         return metadata
     }
